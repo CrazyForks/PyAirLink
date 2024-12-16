@@ -4,3 +4,10 @@ pyserial~=3.5
 smspdudecoder~=2.1.0
 requests~=2.32.3
 APScheduler~=3.11.0
+uvicorn~=0.34.0
+
+# SQLAlchemy is used indirectly by APScheduler SQLAlchemyJobStore
+SQLAlchemy~=2.0.36
+
+# orjson is used indirectly by fastapi Custom Response
+orjson~=3.10.12
