@@ -3,3 +3,4 @@ pydantic~=2.10.3
 pyserial~=3.5
 smspdudecoder~=2.1.0
 requests~=2.32.3
+APScheduler~=3.11.0
