@@ -2,12 +2,12 @@ from configparser import ConfigParser
 
 
 class Config:
-    def __init__(self):
+    def __init__(self, ini_path='data/config.ini', default_ini_path='config.ini.template'):
         self.config = ConfigParser()
-        try:
-            self.config.read('data/config.ini')
-        except FileNotFoundError as e:
-            self.config.read('config.ini.template')
+        config_read = self.config.read(ini_path)
+        if not config_read:
+            print(f"Warning: '{ini_path}' not found. Using default settings.")
+            self.config.read(default_ini_path)
 
     def sqlite_url(self):
         url = self.config.get('DATABASE', 'SQLITE')
@@ -15,7 +15,7 @@ class Config:
 
     def serial(self):
         port = self.config.get('SERIAL', 'PORT')
-        rate = int(self.config.get('SERIAL', 'PORT'))
+        rate = int(self.config.get('SERIAL', 'BAUD_RATE'))
         timeout = float(self.config.get('SERIAL', 'TIMEOUT'))
         return {'port': port, 'rate': rate, 'timeout': timeout}
 

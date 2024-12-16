@@ -59,6 +59,7 @@ class ATCommands:
         """ restart module """
         return ATCommands._send(f"AT+RESET")
 
+at_commands = ATCommands()
 
 if __name__ == "__main__":
     # Example Usage:

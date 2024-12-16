@@ -1,33 +1,32 @@
 from io import StringIO
-
-import serial
 import threading
 import time
 import logging
 
+from serial.serialutil import SerialException
+
+from services.utils.serial_manager import SerialManager
 from .utils.sms import parse_pdu, encode_pdu
-from .utils.commands import ATCommands
-from .utils.config_parser import config
+from .utils.commands import at_commands
 
 logger = logging.getLogger("PyAirLink")
-at_commands = ATCommands()
 
 
-def send_at_command(ser, command, keywords=None, timeout=3):
+def send_at_command(command, keywords=None, timeout=3):
     """
     发送AT指令并等待响应
-    :param ser: 串口对象
     :param command: 要发送的AT指令字符串
     :param keywords: 判断是否成功的关键字
     :param timeout: 等待响应的超时时间(秒)
     :return: 命令响应
     """
     # 发送AT指令
-    ser.write(command)
-    logger.debug(f"发送指令: {command}")
-    # 等待响应
-    response = wait_for_response(ser, keywords=keywords, timeout=timeout)
-    # 返回响应
+    with SerialManager() as ser:
+        ser.write(command)
+        logger.debug(f"发送指令: {command}")
+        # 等待响应
+        response = wait_for_response(ser, keywords=keywords, timeout=timeout)
+        # 返回响应
     return response
 
 
@@ -68,34 +67,34 @@ def initialize_module(ser):
     logger.info("正在初始化模块...")
 
     # 发送基本AT指令
-    response = send_at_command(ser, at_commands.at())
+    response = send_at_command(at_commands.at())
     if not response or "OK" not in response:
         logger.error("无法与模块通信")
         return False
 
     # 检查SIM卡
-    response = send_at_command(ser, at_commands.cpin())
+    response = send_at_command(at_commands.cpin())
     if "READY" not in response:
         logger.error("未检测到 SIM 卡，请检查后重启模块")
         return False
     logger.info("SIM 卡已就绪")
 
     # 设置短信格式为 PDU
-    response = send_at_command(ser, at_commands.cmgf())
+    response = send_at_command(at_commands.cmgf())
     if "OK" not in response:
         logger.error("无法设置短信格式为 PDU")
         return False
     logger.info("短信格式设置为 PDU")
 
     # 设置字符集为 UCS2
-    response = send_at_command(ser, at_commands.cscs())
+    response = send_at_command(at_commands.cscs())
     if "OK" not in response:
         logger.error("无法设置字符集为 UCS2")
         return False
     logger.info("字符集设置为 UCS2")
 
     # 配置新短信通知
-    response = send_at_command(ser, at_commands.cnmi())
+    response = send_at_command(at_commands.cnmi())
     if "OK" not in response:
         logger.error("无法配置新短信通知")
         return False
@@ -103,7 +102,7 @@ def initialize_module(ser):
 
     # 检查 GPRS 附着状态
     while True:
-        response = send_at_command(ser, at_commands.cgatt(), keywords="+CGATT: 1")
+        response = send_at_command(at_commands.cgatt(), keywords="+CGATT: 1")
         if response:
             logger.info("GPRS 已附着")
             break
@@ -124,7 +123,7 @@ def handle_sms(phone_number, sms_content, receive_time):
     # 例如: forward_sms(phone_number, sms_content)
 
 
-def send_sms(ser, to, text):
+def send_sms(to, text):
     """
     使用AT指令在PDU模式下发送SMS。
     ser是已打开的pyserial串口对象。
@@ -137,19 +136,19 @@ def send_sms(ser, to, text):
         return False
 
     # 设置CMGF=0进入PDU模式（如果之前没设置过）
-    resp = send_at_command(ser, at_commands.cmgf())
+    resp = send_at_command(at_commands.cmgf())
     if not resp:
         logger.error("%s: 无法进入PDU模式", logging_tag)
         return False
 
     # 发送AT+CMGS指令
-    resp = send_at_command(ser, at_commands.cmgs(length), keywords='>', timeout=3)
+    resp = send_at_command(at_commands.cmgs(length), keywords='>', timeout=3)
     if not resp:
         logger.error("%s: 未收到短信发送提示符 '>'，超时", logging_tag)
         return False
 
     # 发送PDU数据和Ctrl+Z结束符(0x1A)
-    resp = send_at_command(ser, pdu.encode('utf-8') + b'\x1A', keywords='+CMGS:', timeout=5)
+    resp = send_at_command(pdu.encode('utf-8') + b'\x1A', keywords='+CMGS:', timeout=5)
     logger.debug("%s: 已发送PDU数据，等待发送成功URC", logging_tag)
     if resp:
         logger.info("%s: 短信发送成功", logging_tag)
@@ -183,34 +182,25 @@ def sms_listener(ser):
 
 
 def main():
-    port = config.serial().get('port')
-    rate = config.serial().get('rate')
-    timeout = config.serial().get('timeout')
-    try:
-        ser = serial.Serial(port, rate, timeout=timeout)
-        logger.info(f"已打开串口 {port}，波特率 {rate}")
-    except Exception as e:
-        logger.error(f"无法打开串口 {port}: {e}")
-        return
+    with SerialManager() as ser:
+        try:
+            while True:
+                if not initialize_module(ser):
+                    logger.error("模块初始化失败，退出程序")
+                    ser.close()
+                    return False
+                # 启动短信监听线程
+                listener_thread = threading.Thread(target=sms_listener, args=(ser,), daemon=True)
+                listener_thread.start()
+                logger.info("开始监听短信...")
+                time.sleep(1)
+        except SerialException as e:
+            logger.error(f"无法打开或维持串口连接: {e}")
+        except KeyboardInterrupt:
+            logger.info("程序终止")
+        except Exception as e:
+            logger.error(f"发生未预料的错误: {e}")
 
-    # 初始化模块
-    if not initialize_module(ser):
-        logger.error("模块初始化失败，退出程序")
-        ser.close()
-        return
-
-    # 启动短信监听线程
-    listener_thread = threading.Thread(target=sms_listener, args=(ser,), daemon=True)
-    listener_thread.start()
-    logger.info("开始监听短信...")
-
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        logger.info("程序终止")
-    finally:
-        ser.close()
 
 
 if __name__ == "__main__":
