@@ -7,16 +7,9 @@ import logging
 
 from .utils.sms import parse_pdu, encode_pdu
 from .utils.commands import ATCommands
+from .utils.config_parser import config
 
-
-# 配置日志
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger("PyAirLink")
-
-# 串口配置
-SERIAL_PORT = "/dev/ttyACM0"  # 根据实际情况修改
-BAUD_RATE = 115200
-TIMEOUT = 1
 at_commands = ATCommands()
 
 
@@ -190,15 +183,17 @@ def sms_listener(ser):
 
 
 def main():
-    # 打开串口
+    port = config.serial().get('port')
+    rate = config.serial().get('rate')
+    timeout = config.serial().get('timeout')
     try:
-        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=TIMEOUT)
-        logger.info(f"已打开串口 {SERIAL_PORT}，波特率 {BAUD_RATE}")
+        ser = serial.Serial(port, rate, timeout=timeout)
+        logger.info(f"已打开串口 {port}，波特率 {rate}")
     except Exception as e:
-        logger.error(f"无法打开串口 {SERIAL_PORT}: {e}")
+        logger.error(f"无法打开串口 {port}: {e}")
         return
 
-    # 初始化 Air780E
+    # 初始化模块
     if not initialize_module(ser):
         logger.error("模块初始化失败，退出程序")
         ser.close()

@@ -1,0 +1,7 @@
+[DATABASE]
+SQLITE = database.sqlite
+
+[SERIAL]
+PORT = /dev/ttyACM0
+BAUD_RATE = 115200
+TIMEOUT = 1
