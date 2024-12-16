@@ -5,7 +5,8 @@ import threading
 import time
 import logging
 
-from sms import parse_pdu, encode_pdu
+from .utils.sms import parse_pdu, encode_pdu
+from .utils.commands import ATCommands
 
 
 # 配置日志
@@ -16,21 +17,23 @@ logger = logging.getLogger("PyAirLink")
 SERIAL_PORT = "/dev/ttyACM0"  # 根据实际情况修改
 BAUD_RATE = 115200
 TIMEOUT = 1
+at_commands = ATCommands()
 
 
-def send_at_command(ser, command, timeout=3):
+def send_at_command(ser, command, keywords=None, timeout=3):
     """
     发送AT指令并等待响应
     :param ser: 串口对象
     :param command: 要发送的AT指令字符串
+    :param keywords: 判断是否成功的关键字
     :param timeout: 等待响应的超时时间(秒)
     :return: 命令响应
     """
     # 发送AT指令
-    ser.write((command + "\r\n").encode())
+    ser.write(command)
     logger.debug(f"发送指令: {command}")
     # 等待响应
-    response = wait_for_response(ser, keywords=['OK', 'ERROR'], timeout=timeout)
+    response = wait_for_response(ser, keywords=keywords, timeout=timeout)
     # 返回响应
     return response
 
@@ -43,6 +46,8 @@ def wait_for_response(ser, keywords, timeout=3):
     :param timeout: 超时时间(秒)
     :return: 若匹配成功，返回包含该关键词的完整响应；否则返回None
     """
+    if not keywords:
+        keywords = ['OK', 'ERROR']
     if isinstance(keywords, str):
         keywords = [keywords]
 
@@ -51,7 +56,6 @@ def wait_for_response(ser, keywords, timeout=3):
     while time.time() < end_time:
         if ser.in_waiting:
             chunk = ser.read(ser.in_waiting).decode(errors='ignore')
-            print('123213213', chunk)
             response += chunk
             # 检查是否包含关键字
             for kw in keywords:
@@ -71,34 +75,34 @@ def initialize_module(ser):
     logger.info("正在初始化模块...")
 
     # 发送基本AT指令
-    response = send_at_command(ser, "AT")
+    response = send_at_command(ser, at_commands.at())
     if not response or "OK" not in response:
         logger.error("无法与模块通信")
         return False
 
     # 检查SIM卡
-    response = send_at_command(ser, "AT+CPIN?")
+    response = send_at_command(ser, at_commands.cpin())
     if "READY" not in response:
         logger.error("未检测到 SIM 卡，请检查后重启模块")
         return False
     logger.info("SIM 卡已就绪")
 
     # 设置短信格式为 PDU
-    response = send_at_command(ser, "AT+CMGF=0")
+    response = send_at_command(ser, at_commands.cmgf())
     if "OK" not in response:
         logger.error("无法设置短信格式为 PDU")
         return False
     logger.info("短信格式设置为 PDU")
 
     # 设置字符集为 UCS2
-    response = send_at_command(ser, 'AT+CSCS="UCS2"')
+    response = send_at_command(ser, at_commands.cscs())
     if "OK" not in response:
         logger.error("无法设置字符集为 UCS2")
         return False
     logger.info("字符集设置为 UCS2")
 
     # 配置新短信通知
-    response = send_at_command(ser, "AT+CNMI=2,2,0,0,0")
+    response = send_at_command(ser, at_commands.cnmi())
     if "OK" not in response:
         logger.error("无法配置新短信通知")
         return False
@@ -106,8 +110,8 @@ def initialize_module(ser):
 
     # 检查 GPRS 附着状态
     while True:
-        response = send_at_command(ser, "AT+CGATT?")
-        if "+CGATT: 1" in response:
+        response = send_at_command(ser, at_commands.cgatt(), keywords="+CGATT: 1")
+        if response:
             logger.info("GPRS 已附着")
             break
         else:
@@ -140,28 +144,20 @@ def send_sms(ser, to, text):
         return False
 
     # 设置CMGF=0进入PDU模式（如果之前没设置过）
-    ser.write(b'AT+CMGF=0\r\n')
-    resp = wait_for_response(ser, "OK", 2)
+    resp = send_at_command(ser, at_commands.cmgf())
     if not resp:
         logger.error("%s: 无法进入PDU模式", logging_tag)
         return False
 
     # 发送AT+CMGS指令
-    cmd = f"AT+CMGS={length}\r\n"
-    ser.write(cmd.encode('utf-8'))
-    logger.debug("%s: 等待短信发送提示符 '>'", logging_tag)
-    # 等待 '>' 提示符
-    resp = wait_for_response(ser, ">", 3)
+    resp = send_at_command(ser, at_commands.cmgs(length), keywords='>', timeout=3)
     if not resp:
         logger.error("%s: 未收到短信发送提示符 '>'，超时", logging_tag)
         return False
 
     # 发送PDU数据和Ctrl+Z结束符(0x1A)
-    ser.write((pdu).encode('utf-8') + b'\x1A')
+    resp = send_at_command(ser, pdu.encode('utf-8') + b'\x1A', keywords='+CMGS:', timeout=5)
     logger.debug("%s: 已发送PDU数据，等待发送成功URC", logging_tag)
-
-    # 等待+CMGS: 表示发送成功
-    resp = wait_for_response(ser, "+CMGS:", 5)
     if resp:
         logger.info("%s: 短信发送成功", logging_tag)
         return True
