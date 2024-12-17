@@ -1,3 +1,4 @@
+import threading
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -9,3 +10,5 @@ jobstores = {
 }
 
 scheduler = AsyncIOScheduler(timezone=ZoneInfo("Asia/Shanghai"), jobstores=jobstores)
+
+serial_lock = threading.Lock()
