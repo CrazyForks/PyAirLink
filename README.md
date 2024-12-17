@@ -33,7 +33,7 @@ PyAirLink的缺点
 - 模块不能随身带。有这个需求，为什么不用5ber之类的方案？
 
 ## 使用
-1. 先找出ttl接口路径，Linux一般是/dev/ttyACM之类的，Windows一般是COM+数字
+1. 先找出ttl接口路径，Linux一般是/dev/tty(ACM|USB)+数字，Windows一般是COM+数字
 2. 确认波特率
 3. 确认模块已启动
 ### source code
@@ -49,7 +49,7 @@ python main.py
 ### container
 
 ```shell
-docker run -d -p 10103:10103 -v /PyAirLink/data:/PyAirLink/data -v 	/dev/ttyACM0:/dev/ttyACM0 --name PyAirLink --restart always ghcr.io/zsy5172/pyairlink:master
+docker run -d -p 10103:10103 -v /PyAirLink/data:/PyAirLink/data -v /dev/ttyACM0:/dev/ttyACM0 --name PyAirLink --restart always ghcr.io/zsy5172/pyairlink:master
 ```
 根据实际情况修改你的路径映射，然后将config.ini.template的内容复制到/PyAirLink/data/config.ini内并调整配置
 
