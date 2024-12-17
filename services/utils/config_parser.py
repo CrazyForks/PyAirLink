@@ -15,9 +15,24 @@ class Config:
 
     def serial(self):
         port = self.config.get('SERIAL', 'PORT')
-        rate = int(self.config.get('SERIAL', 'BAUD_RATE'))
-        timeout = float(self.config.get('SERIAL', 'TIMEOUT'))
+        rate = self.config.getint('SERIAL', 'BAUD_RATE')
+        timeout = self.config.getfloat('SERIAL', 'TIMEOUT')
         return {'port': port, 'rate': rate, 'timeout': timeout}
 
+    def server_chan(self):
+        return self.config.get('SERVERCHAN', 'SENDKEY')
+
+    def mail(self):
+        smtp_server = self.config.get('MAIL', 'SMTP_SERVER')
+        smtp_port = self.config.getint('MAIL', 'SMTP_PORT')
+        account = self.config.get('MAIL', 'ACCOUNT')
+        password = self.config.get('MAIL', 'PASSWORD')
+        mail_to = self.config.get('MAIL', 'MAIL_TO')
+        tls = self.config.getboolean('MAIL', 'TLS')
+        return {'smtp_server': smtp_server, 'smtp_port': smtp_port, 'account': account, 'password': password, 'mail_to': mail_to, 'tls': tls}
+
+    def notification(self):
+        channels = self.config.get('NOTIFICATION', 'CHANNELS').split(',')
+        return [channel.strip() for channel in channels] if channels else []
 
 config = Config()

@@ -5,12 +5,13 @@ from email.mime.text import MIMEText
 
 import requests
 
+from utils.config_parser import config
 
-def serverchan(sendkey, title, desp='', options=None):
+def serverchan(title, desp='', options=None):
     """
     照抄自 https://github.com/easychen/serverchan-demo
     """
-
+    sendkey = config.server_chan()
     options = options if options else {}
     # 判断 sendkey 是否以 'sctp' 开头，并提取数字构造 URL
     if sendkey.startswith('sctp'):
@@ -32,32 +33,33 @@ def serverchan(sendkey, title, desp='', options=None):
     return result
 
 
-def send_email(smtp_server, smtp_port, sender_email, sender_password, recipient_email, subject, body, use_tls=False):
+def send_email(subject, body):
+    email_account = config.mail()
     try:
         # 创建邮件内容
         msg = MIMEMultipart()
-        msg['From'] = sender_email
-        msg['To'] = recipient_email
+        msg['From'] = email_account.get('account')
+        msg['To'] = email_account.get('mail_to')
         msg['Subject'] = subject
 
         # 邮件正文内容
         msg.attach(MIMEText(body, 'plain'))
 
         # 创建 SMTP 会话
-        server = smtplib.SMTP(smtp_server, smtp_port)
+        server = smtplib.SMTP(email_account.get('smtp_server'), email_account.get('smtp_port'))
 
-        if use_tls:
+        if email_account.get('tls'):
             server.starttls()  # 启用 TLS 加密
 
         # 登录到 SMTP 服务器
-        server.login(sender_email, sender_password)
+        server.login(email_account.get('account'), email_account.get('password'))
 
         # 发送邮件
-        server.sendmail(sender_email, recipient_email, msg.as_string())
+        server.sendmail(email_account.get('account'), email_account.get('mail_to'), msg.as_string())
 
         # 退出 SMTP 会话
         server.quit()
 
-        print(f"邮件发送成功到 {recipient_email}")
+        print(f"邮件发送成功到 {email_account.get('mail_to')}")
     except Exception as e:
         print(f"邮件发送失败: {str(e)}")

@@ -2,6 +2,8 @@ from io import StringIO
 import time
 import logging
 
+from services.notification import serverchan, send_email
+from services.utils.config_parser import config
 from services.utils.serial_manager import SerialManager
 from .utils.sms import parse_pdu, encode_pdu
 from .utils.commands import at_commands
@@ -74,11 +76,21 @@ def initialize_module():
 
 def handle_sms(phone_number, sms_content, receive_time):
     """
-    处理接收到的短信（可根据需求进行转发或其他操作）
+    处理接收到的短信
     """
     logger.info(f"在{receive_time}收到短信来自 {phone_number}，内容: {sms_content}")
-    # 在此处添加短信转发逻辑，例如发送到服务器或其他设备
-    # 例如: forward_sms(phone_number, sms_content)
+    channels = {'serverchan': serverchan,'mail': send_email}
+    use_channels = config.notification()
+    if use_channels:
+        title = f'you have a sms massage from {phone_number}'
+        content = f'receive time: {receive_time},\ncontent: {sms_content}'
+        for channel in use_channels:
+            func = channels[channel]
+            try:
+                func(title, content)
+            except Exception as e:
+                logger.error(f'短信推送错误，渠道类型： {channel}， 错误： {e}')
+    return True
 
 
 def send_sms(to, text):

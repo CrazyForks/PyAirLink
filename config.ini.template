@@ -5,3 +5,17 @@ SQLITE = database.sqlite
 PORT = /dev/ttyACM0
 BAUD_RATE = 115200
 TIMEOUT = 1
+
+[SERVERCHAN]
+SENDKEY =
+
+[MAIL]
+STMP_SERVER = mail.qq.com
+STMP_PORT = 25
+ACCOUNT = example@qq.com
+PASSWORD = password
+MAIL_TO = example@qq.com
+TLS = false
+
+[NOTIFICATION]
+CHANNELS = serverchan, mail
