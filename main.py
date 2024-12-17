@@ -1,4 +1,5 @@
 import logging
+import threading
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, status
@@ -8,6 +9,7 @@ from pydantic import ValidationError
 from router.route import module_router, sms_router, schedule_router
 from services import scheduler
 from schemas.schemas import ErrorModel, ErrorDetail
+from services.initialize import sms_listener, initialize_module
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger("PyAirLink")
@@ -16,11 +18,19 @@ logger = logging.getLogger("PyAirLink")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     scheduler.start()
+    initialize_module()
+    stop_event = threading.Event()
+    sms_thread = threading.Thread(target=sms_listener, args=(stop_event,), daemon=True)
+    sms_thread.start()
+    logger.info("sms_listener 已启动")
     try:
         yield
     finally:
         if scheduler.running:
             scheduler.shutdown()
+        stop_event.set()
+        sms_thread.join()
+        logger.info("sms_listener 已停止")
 
 
 app = FastAPI(lifespan=lifespan, title='PyAirLink API', version='0.0.1')

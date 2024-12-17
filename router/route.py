@@ -5,7 +5,7 @@ from fastapi.responses import ORJSONResponse
 
 from services import scheduler
 from schemas import schemas
-from services.initialize import send_at_command, send_sms
+from services.initialize import send_sms, web_send_at_command
 from services.utils.commands import at_commands
 
 module_router = APIRouter(
@@ -34,7 +34,7 @@ schedule_router = APIRouter(
 """
                    )
 async def command_base(params: schemas.CommandBaseRequest = Depends()):
-    response = send_at_command(at_commands.base(params.command), keywords=params.keyword, timeout=params.timeout)
+    response = web_send_at_command(at_commands.base(params.command), keywords=params.keyword, timeout=params.timeout)
     return {'status': 'success' if response else 'failure', 'content': response}
 
 
@@ -44,7 +44,7 @@ async def command_base(params: schemas.CommandBaseRequest = Depends()):
 """
                    )
 async def command_reset(params: schemas.Command = Depends()):
-    response = send_at_command(at_commands.reset(), keywords=params.keyword, timeout=params.timeout)
+    response = web_send_at_command(at_commands.reset(), keywords=params.keyword, timeout=params.timeout)
     return {'status': 'success' if response else 'failure', 'content': response}
 
 
@@ -56,7 +56,8 @@ async def command_reset(params: schemas.Command = Depends()):
                    )
 async def immediately_send_sms(params: schemas.SendSMSRequest = Depends()):
     response = send_sms(f'+{params.country}{params.number}', text=params.message)
-    return {'status': 'success' if response else 'failure', 'content': response}
+    return {'status': 'success' if response else 'failure',
+            'content': f'to:+{params.country}{params.number}, message:{params.message}'}
 
 
 @schedule_router.get("/schedule/list", response_model=List[schemas.ListScheduleJob], summary='查看定时任务',
@@ -107,7 +108,7 @@ async def add_sms_schedule(params: schemas.ScheduleSendSMSRequest = Depends()):
                    )
 async def add_restart_schedule(params: schemas.ScheduleSendSMSRequest = Depends()):
     try:
-        job = scheduler.add_job(func=send_at_command, args=(at_commands.reset(),),
+        job = scheduler.add_job(func=web_send_at_command, args=(at_commands.reset(),),
                                 trigger='interval', seconds=params.seconds, jobstore='default')
         return {'status': 'success', 'content': job.id}
     except Exception as e:
