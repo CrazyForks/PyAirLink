@@ -57,7 +57,7 @@ def send_email(subject, body):
         msg.attach(MIMEText(body, 'plain'))
 
         # 创建 SMTP 会话
-        server = smtplib.SMTP(email_account.get('smtp_server'), email_account.get('smtp_port'))
+        server = smtplib.SMTP(email_account.get('smtp_server'), email_account.get('smtp_port'), timeout=5)
 
         if email_account.get('tls'):
             server.starttls()  # 启用 TLS 加密
