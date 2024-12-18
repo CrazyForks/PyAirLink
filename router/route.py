@@ -95,7 +95,7 @@ async def del_schedule(job_id: str = Query()):
 async def add_sms_schedule(params: schemas.ScheduleSendSMSRequest = Depends()):
     try:
         job = scheduler.add_job(func=send_sms, args=(f'+{params.country}{params.number}', params.message,),
-                                trigger='interval', seconds=params.seconds, jobstore='default')
+                                id=params.id, trigger='interval', seconds=params.seconds, jobstore='default')
         return {'status': 'success', 'content': job.id}
     except Exception as e:
         return ORJSONResponse(status_code=400, content={"status": "error", "message": f"An error occurred: {str(e)}"})
