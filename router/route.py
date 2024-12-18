@@ -5,7 +5,7 @@ from fastapi.responses import ORJSONResponse
 
 from services import scheduler
 from schemas import schemas
-from services.initialize import send_sms, web_send_at_command
+from services.initialize import send_sms, web_send_at_command, web_restart
 from services.utils.commands import at_commands
 
 module_router = APIRouter(
@@ -43,9 +43,9 @@ async def command_base(params: schemas.CommandBaseRequest = Depends()):
 """
 """
                    )
-async def command_reset(params: schemas.Command = Depends()):
-    response = web_send_at_command(at_commands.reset(), keywords=params.keyword, timeout=params.timeout)
-    return {'status': 'success' if response else 'failure', 'content': response}
+async def command_reset():
+    response = web_restart()
+    return {'status': 'success' if response else 'failure', 'content': ''}
 
 
 @sms_router.post("/sms/send", response_model=schemas.CommandResponse, summary='发送短信',

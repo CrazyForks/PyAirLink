@@ -1,6 +1,7 @@
 from io import StringIO
 import time
 import logging
+from zoneinfo import ZoneInfo
 
 from services.notification import serverchan, send_email
 from services.utils.config_parser import config
@@ -74,7 +75,17 @@ def initialize_module():
     return True
 
 
-def handle_sms(phone_number, sms_content, receive_time):
+def web_restart():
+    with SerialManager() as serial_manager:
+        resp = serial_manager.send_at_command(at_commands.reset())
+        if not resp:
+            logger.warning("模块重启不成功")
+        else:
+            logger.info("模块重启成功")
+    time.sleep(3)
+    return initialize_module()
+
+
 def handle_sms(phone_number, sms_content, receive_time, tz="Asia/Shanghai"):
     """
     处理接收到的短信
