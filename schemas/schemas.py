@@ -22,7 +22,7 @@ class ResponseDetail(BaseModel):
 
 class Command(BaseModel):
     keyword: Optional[str] = Field(default=None, description="AT命令返回的关键字, 一般是'OK'或者 'ERROR'，不传则两个都检测")
-    timeout: float = Field(default=3, description="等待AT命令回应的超时时间")
+    timeout: int = Field(default=3, description="等待AT命令回应的超时时间")
 
     @field_validator('keyword', mode='after', check_fields=False)
     @classmethod

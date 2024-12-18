@@ -16,7 +16,7 @@ class Config:
     def serial(self):
         port = self.config.get('SERIAL', 'PORT')
         rate = self.config.getint('SERIAL', 'BAUD_RATE')
-        timeout = self.config.getfloat('SERIAL', 'TIMEOUT')
+        timeout = self.config.getint('SERIAL', 'TIMEOUT')
         return {'port': port, 'rate': rate, 'timeout': timeout}
 
     def server_chan(self):

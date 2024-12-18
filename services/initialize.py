@@ -172,7 +172,7 @@ def sms_listener(stop_event):
                         handle_sms(phone_number, sms_content, receive_time)
                     serial_manager.send_at_command(at_commands.cmgd(), keywords=['OK'])
                 # 短暂休眠，避免占用过多资源
-                time.sleep(0.5)
+                time.sleep(1)
             except Exception as e:
                 logger.error(f"sms_listener 出错: {e}")
                 time.sleep(1)

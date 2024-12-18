@@ -5,7 +5,7 @@ from email.mime.text import MIMEText
 
 import requests
 
-from utils.config_parser import config
+from .utils.config_parser import config
 
 def serverchan(title, desp='', options=None):
     """
