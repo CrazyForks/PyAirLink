@@ -75,6 +75,7 @@ def initialize_module():
 
 
 def handle_sms(phone_number, sms_content, receive_time):
+def handle_sms(phone_number, sms_content, receive_time, tz="Asia/Shanghai"):
     """
     处理接收到的短信
     """
