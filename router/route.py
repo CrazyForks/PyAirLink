@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Annotated
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import ORJSONResponse
@@ -33,7 +33,7 @@ schedule_router = APIRouter(
 需要自己拼接所有参数
 """
                    )
-async def command_base(params: schemas.CommandBaseRequest = Depends()):
+async def command_base(params: Annotated[schemas.CommandBaseRequest, Query()]):
     response = web_send_at_command(at_commands.base(params.command), keywords=params.keyword, timeout=params.timeout)
     return {'status': 'success' if response else 'failure', 'content': response}
 
@@ -54,7 +54,7 @@ async def command_reset():
 尚未支持长短信，不要大于70个字符
 """
                    )
-async def immediately_send_sms(params: schemas.SendSMSRequest = Depends()):
+async def immediately_send_sms(params: Annotated[schemas.SendSMSRequest, Query()]):
     response = send_sms(f'+{params.country}{params.number}', text=params.message)
     return {'status': 'success' if response else 'failure',
             'content': f'to:+{params.country}{params.number}, message:{params.message}'}
@@ -69,7 +69,7 @@ async def immediately_send_sms(params: schemas.SendSMSRequest = Depends()):
 async def list_schedule():
     jobs = scheduler.get_jobs()
     if jobs:
-        return [{'id': job.id, 'next_run_time': job.next_run_time, 'trigger': job.trigger, 'func': job.func} for job in jobs]
+        return [{'id': job.id, 'next_run_time': job.next_run_time, 'trigger': str(job.trigger), 'func': job.func.__name__} for job in jobs]
     return ORJSONResponse(status_code=404, content={"status": "fail", "message": f"no jobs in schedule"})
 
 
@@ -92,7 +92,7 @@ async def del_schedule(job_id: str = Query()):
 """
 """
                    )
-async def add_sms_schedule(params: schemas.ScheduleSendSMSRequest = Depends()):
+async def add_sms_schedule(params: Annotated[schemas.ScheduleSendSMSRequest, Query()]):
     try:
         job = scheduler.add_job(func=send_sms, args=(f'+{params.country}{params.number}', params.message,),
                                 id=params.id, trigger='interval', seconds=params.seconds, jobstore='default')
@@ -106,10 +106,9 @@ async def add_sms_schedule(params: schemas.ScheduleSendSMSRequest = Depends()):
 """
 """
                    )
-async def add_restart_schedule(params: schemas.ScheduleSendSMSRequest = Depends()):
+async def add_restart_schedule(params: Annotated[schemas.ScheduleRestartRequest, Query()]):
     try:
-        job = scheduler.add_job(func=web_send_at_command, args=(at_commands.reset(),),
-                                trigger='interval', seconds=params.seconds, jobstore='default')
+        job = scheduler.add_job(func=web_restart, trigger='interval', seconds=params.seconds, jobstore='default')
         return {'status': 'success', 'content': job.id}
     except Exception as e:
         return ORJSONResponse(status_code=400, content={"status": "error", "message": f"An error occurred: {str(e)}"})

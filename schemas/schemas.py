@@ -64,7 +64,11 @@ class ListScheduleJob(BaseModel):
     func: str
 
 
-class ScheduleSendSMSRequest(SendSMSRequest):
-    id: str
-    seconds: int
-    next_run_time: datetime = Field(default=datetime.now(), description="下次执行的时间")
+class ScheduleRestartRequest(BaseModel):
+    seconds: int = Field(..., description="任务间隔秒数")
+    next_run_time: Optional[datetime] = Field(default=None, examples=[datetime.now()], description="下次执行的时间")
+    id: Optional[str] = Field(default=None, description="可以自己起名job_id")
+
+
+class ScheduleSendSMSRequest(ScheduleRestartRequest, SendSMSRequest):
+    pass
