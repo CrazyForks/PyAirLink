@@ -4,6 +4,14 @@ PyAirLink 是一个通过web来管理2G/3G/4G/5G模块的工具，可以用来�
 ## 硬件要求
 1. 模块必须支持UART传递AT信令，请注意接口可以是物理上的TTL接口，也可以是逻辑上的(例如通过USB接口、网口、TCPServer等)
 2. 有自己的一台服务器(系统不限，但只在Linux下测试过)，能以任意一种方式与模块用UART标准连接。
+3. 如果模块插入USB后不显示TTL接口，参考以下操作
+```shell
+# 添加ID，使得接口显示出来，注意，USB的ID以实际为准(1286 4e3d)，可以用lsusb命令获取
+sudo modprobe option
+sudo sh -c 'echo 1286 4e3d > /sys/bus/usb-serial/drivers/option1/new_id'
+# 可能会出现几个tty(ACM|USB)，可以通过minicom测试串口：
+sudo minicom -D /dev/ttyACM0
+```
 
 ## 功能
 1. web api
@@ -49,7 +57,7 @@ python main.py
 ### container
 
 ```shell
-docker run -d -p 10103:10103 -v /PyAirLink/data:/PyAirLink/data -v /dev/ttyACM0:/dev/ttyACM0 --name PyAirLink --restart always ghcr.io/zsy5172/pyairlink:master
+docker run -d -p 10103:10103 -v /PyAirLink/data:/PyAirLink/data --device=/dev/ttyACM0 --name PyAirLink --restart always ghcr.io/zsy5172/pyairlink:master
 ```
 根据实际情况修改你的路径映射，然后将config.ini.template的内容复制到/PyAirLink/data/config.ini内并调整配置
 
