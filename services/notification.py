@@ -1,3 +1,4 @@
+import logging
 import re
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -6,6 +7,9 @@ from email.mime.text import MIMEText
 import requests
 
 from .utils.config_parser import config
+
+logger = logging.getLogger("PyAirLink")
+
 
 def serverchan(title, desp='', options=None):
     """
@@ -28,9 +32,16 @@ def serverchan(title, desp='', options=None):
         'desp': desp,
         **options
     }
-    response = requests.post(url, json=data)
-    result = response.json()
-    return result
+    try:
+        response = requests.post(url, json=data)
+        if response.ok:
+            logger.info(f"serverChan 已推送，返回： {response.json()}")
+            return True
+        else:
+            logger.warning(f"serverChan 推送失败，返回： {response.json()}")
+    except Exception as e:
+        logger.error(f"serverChan推送出错: {e}")
+    return False
 
 
 def send_email(subject, body):
@@ -60,6 +71,6 @@ def send_email(subject, body):
         # 退出 SMTP 会话
         server.quit()
 
-        print(f"邮件发送成功到 {email_account.get('mail_to')}")
+        logger.info(f"邮件发送成功到 {email_account.get('mail_to')}")
     except Exception as e:
-        print(f"邮件发送失败: {str(e)}")
+        logger.error(f"邮件发送失败: {str(e)}")
