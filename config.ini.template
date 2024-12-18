@@ -10,8 +10,8 @@ TIMEOUT = 1
 SENDKEY =
 
 [MAIL]
-STMP_SERVER = mail.qq.com
-STMP_PORT = 25
+SMTP_SERVER = mail.qq.com
+SMTP_PORT = 25
 ACCOUNT = example@qq.com
 PASSWORD = password
 MAIL_TO = example@qq.com
