@@ -71,6 +71,11 @@ def initialize_module():
                 logger.warning("GPRS 未附着，5秒后重试...")
                 time.sleep(5)
 
+        response = serial_manager.send_at_command(at_commands.cmgd(index=1, delflag=2), keywords=['OK'])
+        if not response:
+            logger.error("无法删除已读消息，若储存区满则无法接受新的短信")
+        logger.info("已删除全部已读消息")
+
     logger.info("模块初始化完成")
     return True
 

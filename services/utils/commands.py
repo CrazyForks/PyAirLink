@@ -99,20 +99,19 @@ class ATCommands:
     @staticmethod
     def cmgd(index=1, delflag=3):
         """
-        删除短信
-        0已接收的未读消息
-        1 已接收的已读消息
-        2 已存储的未发送短信
-        3 已存储的已发送短信
-        4 所有短信
-        且返回如下：
+        删除短信，且返回如下：
             +CMGL:<index>,<stat>,[<alpha>],<length><CR><LF>< pdu><CR><LF>+CMGL:<index>,<stat>,[<alpha>],<length><CR><LF><pdu>[...]]
             OK
-        :param index:
-        :param delflag:
+        :param index: 这个设置命令是删除<mem>1中索引为index的短信
+        :param delflag: 这个设置命令是删除所有状态为<delflag>的短信。当<delflag>不等于0时，<index>参数被忽略
+                        0 删除指定位置号码为<index>的短消息
+                        1 删除优选存储器其中所有已读的短消息，保留未读短消息和已存储的MO短消息（无论是否发送）MO:Mobile Originated
+                        2 删除优选存储器中所有已读的消息和已发送的MO短消息，保留未读的以及未发送的已存储MO短消息
+                        3 删除优选存储器中所有已读的短消息，已发送和未发送的已存储MO短消息，保留未读的短消息
+                        4 删除优选存储器中包括未读在内所有的短消息
         :return:
         """
-        return ATCommands._send(f"AT+CNGD={index},{delflag}")
+        return ATCommands._send(f"AT+CMGD={index},{delflag}")
 
     @staticmethod
     def cgatt(attach=None):
@@ -150,3 +149,5 @@ if __name__ == "__main__":
     print(ATCommands.cnmi(2, 2, 0, 0, 0))
     print(ATCommands.cgatt())
     print(ATCommands.cmgs("+1234567890"))
+    print(ATCommands.cmgl(stat=0))
+    print(ATCommands.cmgd(index=1))
