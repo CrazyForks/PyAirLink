@@ -108,11 +108,11 @@ class ATCommands:
         且返回如下：
             +CMGL:<index>,<stat>,[<alpha>],<length><CR><LF>< pdu><CR><LF>+CMGL:<index>,<stat>,[<alpha>],<length><CR><LF><pdu>[...]]
             OK
-        :param index:
-        :param delflag:
+        :param index: 这个设置命令是删除<mem>1中索引为index的短信
+        :param delflag: 这个设置命令是删除所有状态为<delflag>的短信。当<delflag>不等于0时，<index>参数被忽略
         :return:
         """
-        return ATCommands._send(f"AT+CNGD={index},{delflag}")
+        return ATCommands._send(f"AT+CMGD={index},{delflag}")
 
     @staticmethod
     def cgatt(attach=None):
@@ -150,3 +150,5 @@ if __name__ == "__main__":
     print(ATCommands.cnmi(2, 2, 0, 0, 0))
     print(ATCommands.cgatt())
     print(ATCommands.cmgs("+1234567890"))
+    print(ATCommands.cmgl(stat=0))
+    print(ATCommands.cmgd(index=1))
