@@ -35,42 +35,33 @@ def serverchan(title, desp='', options=None):
     try:
         response = requests.post(url, json=data)
         if response.ok:
-            logger.info(f"serverChan 已推送，返回： {response.json()}")
+            logger.info(f"serverChan has been pushed, return: {response.json()}")
             return True
         else:
-            logger.warning(f"serverChan 推送失败，返回： {response.json()}")
+            logger.warning(f"serverChan push failed, return: {response.json()}")
     except Exception as e:
-        logger.error(f"serverChan推送出错: {e}")
+        logger.error(f"serverChan push error: {e}")
     return False
 
 
 def send_email(subject, body):
     email_account = config.mail()
     try:
-        # 创建邮件内容
         msg = MIMEMultipart()
         msg['From'] = email_account.get('account')
         msg['To'] = email_account.get('mail_to')
         msg['Subject'] = subject
 
-        # 邮件正文内容
         msg.attach(MIMEText(body, 'plain'))
-
-        # 创建 SMTP 会话
         server = smtplib.SMTP(email_account.get('smtp_server'), email_account.get('smtp_port'), timeout=5)
 
         if email_account.get('tls'):
-            server.starttls()  # 启用 TLS 加密
+            server.starttls()
 
-        # 登录到 SMTP 服务器
         server.login(email_account.get('account'), email_account.get('password'))
-
-        # 发送邮件
         server.sendmail(email_account.get('account'), email_account.get('mail_to'), msg.as_string())
-
-        # 退出 SMTP 会话
         server.quit()
 
-        logger.info(f"邮件发送成功到 {email_account.get('mail_to')}")
+        logger.info(f"Successfully sent email to: {email_account.get('mail_to')}")
     except Exception as e:
-        logger.error(f"邮件发送失败: {str(e)}")
+        logger.error(f"Email sending failed: {str(e)}")

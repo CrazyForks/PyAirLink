@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
     stop_event = threading.Event()
     sms_thread = threading.Thread(target=sms_listener, args=(stop_event,), daemon=True)
     sms_thread.start()
-    logger.info("sms_listener 已启动")
+    logger.info("sms_listener started")
     try:
         yield
     finally:
@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
             scheduler.shutdown()
         stop_event.set()
         sms_thread.join()
-        logger.info("sms_listener 已停止")
+        logger.info("sms_listener stopped")
 
 
 app = FastAPI(lifespan=lifespan, title='PyAirLink API', version='0.0.1')

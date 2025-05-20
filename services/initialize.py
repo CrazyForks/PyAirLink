@@ -22,61 +22,61 @@ def initialize_module():
     """
     初始化模块
     """
-    logger.info("正在初始化模块...")
+    logger.info("Initializing modules...")
 
     # 发送基本AT指令
     with SerialManager() as serial_manager:
         response = serial_manager.send_at_command(at_commands.at(), keywords="OK")
         if not response:
-            logger.error("无法与模块通信")
+            logger.error("Unable to communicate with module")
             return False
 
         response = serial_manager.send_at_command(at_commands.cpin(), keywords="OK")
         if "READY" not in response:
-            logger.error("未检测到 SIM 卡，请检查后重启模块")
+            logger.error("SIM card not detected, please check and restart the module")
             return False
-        logger.info("SIM 卡已就绪")
+        logger.info("SIM card ready")
 
         response = serial_manager.send_at_command(at_commands.cmgf(), keywords="OK")
         if not response:
-            logger.error("无法设置短信格式为 PDU")
+            logger.error("Unable to set SMS format to PDU")
             return False
-        logger.info("短信格式设置为 PDU")
+        logger.info("SMS format is set to PDU")
 
         response = serial_manager.send_at_command(at_commands.cscs(), keywords="OK")
         if not response:
-            logger.error("无法设置字符集为 UCS2")
+            logger.error("Unable to set character set to UCS2")
             return False
-        logger.info("字符集设置为 UCS2")
+        logger.info("Character set is set to UCS2")
 
         response = serial_manager.send_at_command(at_commands.cpms(), keywords="OK")
         if not response:
-            logger.error("无法配置新短信暂存区")
+            logger.error("Unable to configure new SMS buffer")
             return False
-        logger.info("新短信暂存区配置完成")
+        logger.info("New SMS buffer configuration completed")
 
         response = serial_manager.send_at_command(at_commands.cnmi(), keywords="OK")
         if not response:
-            logger.error("无法配置新短信通知")
+            logger.error("Unable to configure new SMS notifications")
             return False
-        logger.info("新短信通知配置完成")
+        logger.info("New SMS notification configuration completed")
 
         # 检查 GPRS 附着状态
         while True:
             response = serial_manager.send_at_command(at_commands.cgatt(), keywords="+CGATT: 1")
             if response:
-                logger.info("GPRS 已附着")
+                logger.info("GPRS Attached")
                 break
             else:
-                logger.warning("GPRS 未附着，5秒后重试...")
+                logger.warning("GPRS not attached, retrying in 5 seconds...")
                 time.sleep(5)
 
         response = serial_manager.send_at_command(at_commands.cmgd(index=1, delflag=2), keywords=['OK'])
         if not response:
-            logger.error("无法删除已读消息，若储存区满则无法接受新的短信")
-        logger.info("已删除全部已读消息")
+            logger.error("Unable to delete read messages, and unable to receive new messages if the storage area is full")
+        logger.info("All read messages have been deleted")
 
-    logger.info("模块初始化完成")
+    logger.info("Module initialization completed")
     return True
 
 
@@ -84,9 +84,9 @@ def web_restart():
     with SerialManager() as serial_manager:
         resp = serial_manager.send_at_command(at_commands.reset())
         if not resp:
-            logger.warning("模块重启不成功")
+            logger.warning("Module restart failed")
         else:
-            logger.info("模块重启成功")
+            logger.info("Module restart successful")
     time.sleep(3)
     return initialize_module()
 
@@ -95,7 +95,7 @@ def handle_sms(phone_number, sms_content, receive_time, tz="Asia/Shanghai"):
     """
     处理接收到的短信
     """
-    logger.info(f"在{receive_time}收到短信来自 {phone_number}，内容: {sms_content}")
+    logger.info(f"Received SMS from {phone_number} at {receive_time}, content: {sms_content}")
     channels = {'serverchan': serverchan,'mail': send_email}
     use_channels = config.notification()
     if use_channels:
@@ -106,7 +106,7 @@ def handle_sms(phone_number, sms_content, receive_time, tz="Asia/Shanghai"):
             try:
                 func(title, content)
             except Exception as e:
-                logger.error(f'短信推送错误，渠道类型： {channel}， 错误： {e}')
+                logger.error(f'SMS push error, channel type: {channel}, error: {e}')
     return True
 
 
@@ -119,30 +119,30 @@ def send_sms(to, text):
     logging_tag = "send_sms"
     pdu, length = encode_pdu(to, text)
     if not pdu or not length:
-        logger.error("%s: 短信编码失败", logging_tag)
+        logger.error("%s: SMS encoding failed", logging_tag)
         return False
 
     # 设置CMGF=0进入PDU模式（如果之前没设置过）
     with SerialManager() as serial_manager:
         resp = serial_manager.send_at_command(at_commands.cmgf())
         if not resp:
-            logger.error("%s: 无法进入PDU模式", logging_tag)
+            logger.error("%s: Unable to enter PDU mode", logging_tag)
             return False
 
         # 发送AT+CMGS指令
         resp = serial_manager.send_at_command(at_commands.cmgs(length), keywords='>', timeout=3)
         if not resp:
-            logger.error("%s: 未收到短信发送提示符 '>'，超时", logging_tag)
+            logger.error("%s: Receive SMS message sending prompt '>' timeout", logging_tag)
             return False
 
         # 发送PDU数据和Ctrl+Z结束符(0x1A)
         resp = serial_manager.send_at_command(pdu.encode('utf-8') + b'\x1A', keywords='+CMGS:', timeout=5)
-        logger.debug("%s: 已发送PDU数据，等待发送成功URC", logging_tag)
+        logger.debug("%s: PDU data has been sent, waiting for URC to be sent successfully", logging_tag)
         if resp:
-            logger.info("%s: 短信发送成功", logging_tag)
+            logger.info("%s: SMS sent successfully", logging_tag)
             return True
         else:
-            logger.error("%s: 未收到+CMGS:确认，发送失败", logging_tag)
+            logger.error("%s: No confirmation message of '+CMGS' was received, sending failed", logging_tag)
             return False
 
 
@@ -172,13 +172,13 @@ def sms_listener(stop_event):
                                     if isinstance(match, dict):
                                         massages.append(match)
                                     else:
-                                        logger.warning(f"对PDU: {pdu_line} 的解析不正确")
+                                        logger.warning(f"Incorrect parsing of PDU: {pdu_line}")
                                 except Exception as e:
-                                    logger.error(f"对PDU: {pdu_line} 的解析出错 {e}")
+                                    logger.error(f"Parsing PDU: {pdu_line} error: {e}")
                                 i += 2  # 跳过 PDU 数据行，继续处理下一条短信
                             else:
                                 # 错误处理：+CMGL 行后没有 PDU 数据
-                                logger.warning(f"在索引 {i} 处，+CMGL 行后缺少 PDU 数据")
+                                logger.warning(f"At index {i}, PDU data is missing after +CMGL line")
                                 i += 1
                         else:
                             i += 1
@@ -191,7 +191,7 @@ def sms_listener(stop_event):
                 # 短暂休眠，避免占用过多资源
                 time.sleep(1)
             except Exception as e:
-                logger.error(f"sms_listener 出错: {e}")
+                logger.error(f"sms_listener error: {e}")
                 time.sleep(1)
 
 
