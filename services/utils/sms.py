@@ -5,7 +5,6 @@ from smspdudecoder.codecs import UCS2
 from smspdudecoder.elements import Number, TypeOfAddress
 
 
-# 配置日志
 logger = logging.getLogger("PyAirLink")
 
 
@@ -17,7 +16,7 @@ def parse_pdu(pdu):
         sms_data = SMSDeliver.decode(pdu)
         return sms_data
     except Exception as e:
-        logger.error(f"PDU解析失败: {e}")
+        logger.error(f"PDU parsing failed: {e}")
         raise e
 
 

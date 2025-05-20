@@ -1,64 +1,75 @@
 # PyAirLink
-PyAirLink 是一个通过web来管理2G/3G/4G/5G模块的工具，可以用来替代你那台只用于接收短信的备用机
 
-## 硬件要求
-1. 模块必须支持UART传递AT信令，请注意接口可以是物理上的TTL接口，也可以是逻辑上的(例如通过USB接口、网口、TCPServer等)
-2. 有自己的一台服务器(系统不限，但只在Linux下测试过)，能以任意一种方式与模块用UART标准连接。
-3. 如果模块插入USB后不显示TTL接口，参考以下操作
-```shell
-# 添加ID，使得接口显示出来，注意，USB的ID以实际为准(1286 4e3d)，可以用lsusb命令获取
-sudo modprobe option
-sudo sh -c 'echo 1286 4e3d > /sys/bus/usb-serial/drivers/option1/new_id'
-# 可能会出现几个tty(ACM|USB)，可以通过minicom测试串口：
-sudo minicom -D /dev/ttyACM0
-```
+PyAirLink is a tool for managing wireless communication modules through a web interface. It supports manual execution of AT commands and provides convenient interfaces based on the standard AT commands defined in `3GPP TS 27.005`, such as sending and receiving SMS.
 
-## 功能
-1. web api
-2. 短信自动转发
-   - 邮件
-   - server酱
-3. 定时/手动重启
-4. 定时/手动发送短信
-5. 执行自定义AT信令
+[中文](README.cn.md)
 
-## 前情提要
+## Hardware Requirements
 
-感谢 [sms_forwarder_air780_esp32](https://github.com/boris1993/sms_forwarder_air780_esp32) 这个项目的启发。他是通过编写固件的形式实现相关功能。两边对比如下：
+1. The module must support UART communication for AT commands. This interface can be a physical TTL port or a logical connection (for example, via USB, Ethernet, TCP Server, etc.).  
+2. You need a server (operating system is not strictly limited, but it has only been tested on Linux) that can connect to the module via a standard UART method.  
+3. If the module does not automatically show a TTL interface after plugging in the USB, you can try the following commands (example shown for Linux):  
+   ```shell
+   # Add the USB device ID so the interface is recognized. Adjust the ID (1286 4e3d in the example) according to output from lsusb.
+   sudo modprobe option
+   sudo sh -c 'echo 1286 4e3d > /sys/bus/usb-serial/drivers/option1/new_id'
 
-PyAirLink的优点
-- 不需要额外的ESP32硬件，相关功能转移到了你自己的NAS/软路由
-- 是否支持电信网络仅取决于你买什么模块
-- 对硬件无要求，硬件投入较低。例如我用的是这个(AT固件版本) ![img.jpg](doc/Air780E.jpg)
-- 模块和服务器并不需要物理上在同一个地方，有两种方法
-  - DTU固件的模块，配置两边通过厂家或者你自己的云平台来交互(使用sim卡的流量)
-  - 模块加上一个TTL转网络的转换器
-- 不需要焊接等硬件操作，也不需要学习刷写固件
+   # After this step, you might see several /dev/ttyACM* or /dev/ttyUSB* devices.
+   # You can verify a particular device using a serial tool like minicom:
+   sudo minicom -D /dev/ttyACM0
+   ```
 
-PyAirLink的缺点
+## Features
 
-- 需要有台服务器，功耗毫无优势
-- 模块不能随身带。有这个需求，为什么不用5ber之类的方案？
+1. Web API for configuration and management
+2. Automatic SMS forwarding:
+   - Email
+   - ServerChan (Server酱)
+3. Scheduled or manual module reboot
+4. Scheduled or manual SMS sending
+5. Custom AT command execution
 
-## 使用
-1. 先找出/定义接口路径，Linux一般是/dev/tty(ACM|USB)+数字，Windows一般是COM+数字
-2. 确认波特率
-3. 确认模块已启动
-### source code
+## Background
+
+PyAirLink was designed to easily enable multiple SIM cards to remain active while automatically forwarding received SMS messages, without requiring expensive hardware.
+
+**Advantages**  
+- All functionalities are integrated on the server side, making it easy to run multiple instances to manage multiple SIM cards.  
+- Requires only minimal module capabilities—any correct module purchase can potentially work on any network.  
+- Has no special hardware requirements, keeping costs low. The following is one module example (AT firmware):  
+  ![img.jpg](doc/Air780E.jpg)  
+- The module and the server do not need to be physically colocated. There are two approaches:  
+  - Use a module with DTU firmware, and configure both sides to interact via the manufacturer's platform or your own cloud (using SIM card data).  
+  - Use an additional TTL-to-network converter for the module.  
+- No soldering or hardware flashing is required.
+
+**Disadvantages**  
+- Requires a server, which is not power efficient compared to other solutions.  
+- The module is not portable. If portability is required, an eSIM-based solution such as 5ber might suit better.
+
+## Usage
+
+1. Identify/define the path of your module interface. On Linux, it is generally `/dev/ttyACM*` or `/dev/ttyUSB*`; on Windows, it is typically `COM*`.  
+2. Confirm the baud rate.  
+3. Ensure the module is properly powered on.
+
+### Source Code
+
 ```shell
 git clone https://github.com/zsy5172/PyAirLink.git
 cd PyAirLink
 pip install -r requiremenets.txt
 cp config.ini.template data/config.ini
-# 将config.ini内容根据你的实际情况修改
+# Modify config.ini based on your environment
 python main.py
 ```
 
-### container
+### Container
 
 ```shell
 docker run -d -p 10103:10103 -v /PyAirLink/data:/PyAirLink/data --device=/dev/ttyACM0 --name PyAirLink --restart always ghcr.io/zsy5172/pyairlink:master
 ```
-根据实际情况修改你的路径映射，然后将config.ini.template的内容复制到/PyAirLink/data/config.ini内并调整配置
 
-now you can access at [http://localhost:10103/docs#/](http://localhost:10103/docs#/)
+Make sure to update the path mappings according to your setup before running. Copy the contents of `config.ini.template` into `/PyAirLink/data/config.ini` and modify the configuration as needed.
+
+Once started, you can access the web interface at [http://localhost:10103/docs#/](http://localhost:10103/docs#/).

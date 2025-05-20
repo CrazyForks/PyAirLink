@@ -23,9 +23,9 @@ class SerialManager:
         if self._ser is None or not self._ser.is_open:
             try:
                 self._ser = serial.Serial(self.port, self.rate, timeout=self.timeout)
-                logger.info(f"串口已打开：{self.port}，波特率：{self.rate}")
+                logger.info(f"Serial port is open：{self.port}, baud rate：{self.rate}")
             except Exception as e:
-                logger.error(f"无法打开串口：{e}")
+                logger.error(f"Unable to open serial port：{e}")
                 self._ser = None
                 raise e
         return self
@@ -44,9 +44,9 @@ class SerialManager:
         if self._ser and self._ser.is_open:
             try:
                 self._ser.close()
-                logger.info("串口已关闭")
+                logger.info("Serial port closed")
             except Exception as e:
-                logger.error(f"关闭串口时出错：{e}")
+                logger.error(f"Error closing serial port: {e}")
             finally:
                 self._ser = None
 
@@ -72,10 +72,10 @@ class SerialManager:
                 try:
                     # 检查串口是否已打开
                     if self._ser is None or not self._ser.is_open:
-                        logger.warning("串口未打开，正在尝试打开...")
+                        logger.warning("The serial port is not open, trying to open...")
                         self.open()
 
-                    logger.debug(f"发送指令: {command}")
+                    logger.debug(f"Sending command: {command}")
                     self._ser.write(command)
                     self._ser.flush()
                     response = ''
@@ -86,22 +86,22 @@ class SerialManager:
                             response += data
                             for kw in keywords:
                                 if kw in response:
-                                    logger.debug(f"匹配到关键词 '{kw}' 于响应中: {response}")
+                                    logger.debug(f"Matched keyword '{kw}' in response: {response}")
                                     return response
                         time.sleep(0.1)
-                    logger.debug(f"等待关键词 {keywords} 超时: {response}")
+                    logger.debug(f"Waiting for keywords {keywords} Timed out: {response}")
                     return response if response else None
                 except (serial.SerialException, serial.SerialTimeoutException, OSError) as e:
-                    logger.error(f"串口通信出错：{e}")
+                    logger.error(f"Serial communication error: {e}")
                     # 尝试重连
                     attempt += 1
-                    logger.info(f"正在尝试重新连接串口（第 {attempt} 次重试）")
+                    logger.info(f"Trying to reconnect to the serial port ({attempt} times)")
                     self.close()  # 关闭串口，准备重新打开
                     time.sleep(1)  # 等待一段时间再尝试
                     continue  # 继续下一次重试
                 except Exception as e:
-                    logger.error(f"send_at_command 出错：{e}")
+                    logger.error(f"send_at_command error: {e}")
                     return None
 
-        logger.error(f"在尝试 {retries} 次后，无法完成命令发送：{command}")
+        logger.error(f"Unable to complete command send after {retries} attempts: {command}")
         return None
