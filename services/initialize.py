@@ -174,7 +174,7 @@ def sms_listener(stop_event):
                                     else:
                                         logger.warning(f"Incorrect parsing of PDU: {pdu_line}")
                                 except Exception as e:
-                                    logger.error(f"Parsing PDU: {pdu_line} error: {e}")
+                                    logger.error(f"Parsing PDU: {pdu_line}\nerror: {e}\nresponse: {response}")
                                 i += 2  # 跳过 PDU 数据行，继续处理下一条短信
                             else:
                                 # 错误处理：+CMGL 行后没有 PDU 数据
