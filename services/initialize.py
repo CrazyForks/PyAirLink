@@ -100,7 +100,7 @@ def handle_sms(phone_number, sms_content, receive_time, tz="Asia/Shanghai"):
     use_channels = config.notification()
     if use_channels:
         title = f'new sms from {phone_number}'
-        content = f'receive time: {receive_time.astimezone(ZoneInfo(tz))},\ncontent: {sms_content}'
+        content = f'{sms_content},\nreceive time: {receive_time.astimezone(ZoneInfo(tz))}'
         for channel in use_channels:
             func = channels[channel]
             try:
