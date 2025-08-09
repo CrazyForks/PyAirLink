@@ -44,6 +44,27 @@ def serverchan(title, desp='', options=None):
     return False
 
 
+def bark(title, body, options=None):
+    """
+    使用 Bark 推送消息
+    """
+    bark_config = config.bark()
+    url = f"{bark_config.get('url')}/push"
+    key = bark_config.get('key')
+    options = options if options else {}
+    data = {"title": title, "body": body, "device_key": key, **options}
+    try:
+        response = requests.post(url, json=data)
+        if response.ok:
+            logger.info(f"Bark push has been sent, return: {response.json()}")
+            return True
+        else:
+            logger.warning(f"Bark push failed, return: {response.text}")
+    except Exception as e:
+        logger.error(f"Bark push error: {e}")
+    return False
+
+
 def send_email(subject, body):
     email_account = config.mail()
     try:
