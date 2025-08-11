@@ -24,6 +24,7 @@ PyAirLink is a tool for managing wireless communication modules through a web in
 1. Web API for configuration and management
 2. Automatic SMS forwarding:
    - Email
+   - Bark
    - ServerChan (Server酱)
 3. Scheduled or manual module reboot
 4. Scheduled or manual SMS sending

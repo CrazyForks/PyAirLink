@@ -17,6 +17,7 @@ sudo minicom -D /dev/ttyACM0
 1. web api
 2. 短信自动转发
    - 邮件
+   - Bark
    - server酱
 3. 定时/手动重启
 4. 定时/手动发送短信
