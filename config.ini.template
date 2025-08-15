@@ -9,6 +9,10 @@ TIMEOUT = 1
 [SERVERCHAN]
 SENDKEY =
 
+[BARK]
+URL = https://api.day.app
+KEY =
+
 [MAIL]
 SMTP_SERVER = mail.qq.com
 SMTP_PORT = 25
@@ -18,4 +22,4 @@ MAIL_TO = example@qq.com
 TLS = false
 
 [NOTIFICATION]
-CHANNELS = serverchan, mail
+CHANNELS = serverchan, mail, bark

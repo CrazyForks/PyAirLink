@@ -22,6 +22,11 @@ class Config:
     def server_chan(self):
         return self.config.get('SERVERCHAN', 'SENDKEY')
 
+    def bark(self):
+        url = self.config.get('BARK', 'URL')
+        key = self.config.get('BARK', 'KEY')
+        return {'url': url, 'key': key}
+
     def mail(self):
         smtp_server = self.config.get('MAIL', 'SMTP_SERVER')
         smtp_port = self.config.getint('MAIL', 'SMTP_PORT')
